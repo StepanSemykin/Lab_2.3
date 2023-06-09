@@ -6,6 +6,7 @@
 #include <string>
 #include <queue>
 #include <limits>
+#include <functional>
 
 using namespace std;
 
@@ -201,10 +202,6 @@ public:
         }
         path_vert.push_back(from);
         reverse(path_vert.begin(), path_vert.end());
-        //for (const auto& v : path_vert)
-        //{
-        //    cout << v << " ";
-        //}
         vector<Edge> path_edges;
         for (auto it_1 = path_vert.begin(); (it_1 + 1) != path_vert.end(); it_1++)
         {
@@ -214,15 +211,6 @@ public:
                 if (e.from == *it_1 && e.to == *(it_1 + 1)) path_edges.push_back(e);
             }
         }
-        //for (const auto& p : path_edges)
-        //{
-        //    cout << "from: " << p.from << " to: " << p.to << " len: " << p.len << ";  ";
-        //}
-        //cout << endl;
-        //for (const auto& [vertex, edge] : d)
-        //{
-        //    cout << vertex << ": " << edge << endl;
-        //}
         return make_unique<vector<Edge>>(path_edges);
     }
 
@@ -272,30 +260,23 @@ public:
         return v;
     }
 
-    unique_ptr<vector<Vertex>> walk(const Vertex& start_vertex) 
+    void walk(const Vertex& start_vertex, function<void(const Vertex&)> action)
     {
         unordered_map<Vertex, bool> visited;
         vector<Vertex> result;
         result.reserve(_data.size());
-        dfs(visited, start_vertex, result);
-        for (const auto& [vertex, edge] : _data)
-        {
-            if (find(result.begin(), result.end(), vertex) == result.end())
-            {
-                dfs(visited, vertex, result);
-            }
-        }
-        return make_unique<vector<Vertex>>(result);
+        dfs(visited, start_vertex, result, action);
     }
 
-    void dfs(unordered_map<Vertex, bool>& visited, const Vertex& current_vertex, vector<Vertex>& result) 
+    void dfs(unordered_map<Vertex, bool>& visited, const Vertex& current_vertex, vector<Vertex>& result, function<void(const Vertex&)> action)
     {
         visited[current_vertex] = true;
+        action(current_vertex);
         result.push_back(current_vertex);
         for (auto& edge : _data[current_vertex])
         {
             const auto& next_vertex = edge.to;
-            if (!visited[next_vertex]) dfs(visited, next_vertex, result);
+            if (!visited[next_vertex]) dfs(visited, next_vertex, result, action);
         }
     }
 
@@ -314,6 +295,12 @@ public:
     }
 };
 
+template<typename T>
+void print(const T& v)
+{
+    cout << v << "\t";
+}
+
 int main()
 {
     Graph<size_t, double> g;
@@ -330,58 +317,75 @@ int main()
 
     cout << g << endl << endl;
 
-    g.remove_edge(3, 1);
+    cout << "Walk: " << "\t";
+    g.walk(2, print<size_t>);
+    cout << endl << endl;
 
-    cout << g << endl << endl;
-
-    cout << "Has edge 3->1: " << g.has_edge(3, 1) << endl;
-    cout << "Has vertex 5: " << g.has_vertex(5) << endl;
-    cout << "Len 2->1: " << g.get_len(2, 1) << endl;
-    
-    auto path = g.shortest_path(1, 4);
-    cout << "Shortest path 1->4: ";
-    for (auto& i : *path)
+    vector<size_t> visited;
+    auto vertices = [&](size_t v)
     {
-        cout << "from: " << i.from << " to: " << i.to << " len: " << i.len << "; ";
-    }
-    cout << endl;
-
-    unique_ptr<vector<size_t>> result = g.walk(1);
-    cout << "Walk: ";
-    for (auto i : *result) 
-    {
-        cout << i << "\t";
-    }
-    cout << endl;
-    
-    auto result_vert = g.get_vertices();
-    cout << "Vertex: ";
-    for (auto& i : *result_vert) 
+        visited.push_back(v);
+    };
+    g.walk(2, vertices);
+    cout << "Vector vertices: " << "\t";
+    for (const auto& i : visited)
     {
         cout << i << "\t";
     }
     cout << endl;
 
-    auto result_edges = g.get_edges(2);
-    cout << "Edges: ";
-    for (auto& i : *result_edges) 
-    {
-        cout << "from: " << i.from << " to: " << i.to << " len: " << i.len << "; ";
-    }
-    cout << endl;
+    //g.remove_edge(3, 1);
 
-    Graph<size_t, double> gr;
-    gr.add_vertex(1);
-    gr.add_vertex(2);
-    gr.add_vertex(3);
-    gr.add_edge(1, 2, 1);
-    gr.add_edge(1, 3, 7);
-    gr.add_edge(2, 1, 2);
-    gr.add_edge(2, 3, 3);
-    gr.add_edge(3, 1, 1);
-    gr.add_edge(3, 2, 5);
+    //cout << g << endl << endl;
 
-    gr.storage();
+    //cout << "Has edge 3->1: " << g.has_edge(3, 1) << endl;
+    //cout << "Has vertex 5: " << g.has_vertex(5) << endl;
+    //cout << "Len 2->1: " << g.get_len(2, 1) << endl;
+    //
+    //auto path = g.shortest_path(1, 4);
+    //cout << "Shortest path 1->4: ";
+    //for (auto& i : *path)
+    //{
+    //    cout << "from: " << i.from << " to: " << i.to << " len: " << i.len << "; ";
+    //}
+    //cout << endl;
+
+    ////unique_ptr<vector<size_t>> result = g.walk(2);
+    ////cout << "Walk: ";
+    ////for (auto i : *result) 
+    ////{
+    ////    cout << i << "\t";
+    ////}
+    ////cout << endl;
+    //
+    //auto result_vert = g.get_vertices();
+    //cout << "Vertex: ";
+    //for (auto& i : *result_vert) 
+    //{
+    //    cout << i << "\t";
+    //}
+    //cout << endl;
+
+    //auto result_edges = g.get_edges(2);
+    //cout << "Edges: ";
+    //for (auto& i : *result_edges) 
+    //{
+    //    cout << "from: " << i.from << " to: " << i.to << " len: " << i.len << "; ";
+    //}
+    //cout << endl;
+
+    //Graph<size_t, double> gr;
+    //gr.add_vertex(1);
+    //gr.add_vertex(2);
+    //gr.add_vertex(3);
+    //gr.add_edge(1, 2, 1);
+    //gr.add_edge(1, 3, 7);
+    //gr.add_edge(2, 1, 2);
+    //gr.add_edge(2, 3, 3);
+    //gr.add_edge(3, 1, 1);
+    //gr.add_edge(3, 2, 5);
+
+    //gr.storage();
 
     return 0;
 }
